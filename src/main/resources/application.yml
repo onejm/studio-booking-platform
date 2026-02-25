@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: studio-reservation
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
