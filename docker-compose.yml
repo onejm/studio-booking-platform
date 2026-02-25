@@ -1,0 +1,42 @@
+services:
+  mysql:
+    image: mysql:8.0.29
+    container_name: studio-reservation-mysql
+    restart: always
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: studio_reservation
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_USER: studio
+      MYSQL_PASSWORD: studio123
+      TZ: "Asia/Seoul"
+    volumes:
+      - ./docker/mysql/my.cnf:/etc/my.cnf
+      - studio-reservation-mysql-data:/var/lib/mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p1234"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: studio-reservation-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - studio-reservation-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  studio-reservation-mysql-data:
+  studio-reservation-redis-data:
