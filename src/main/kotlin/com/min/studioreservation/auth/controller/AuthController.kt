@@ -4,6 +4,8 @@ import com.min.studioreservation.auth.dto.LoginRequest
 import com.min.studioreservation.auth.dto.LoginResponse
 import com.min.studioreservation.auth.dto.SignUpRequest
 import com.min.studioreservation.auth.dto.SignUpResponse
+import com.min.studioreservation.auth.dto.WithdrawResponse
+import com.min.studioreservation.auth.security.CustomUserPrincipal
 import com.min.studioreservation.auth.service.AuthService
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -48,5 +50,18 @@ class AuthController(
     ) {
         SecurityContextLogoutHandler().logout(httpRequest, httpResponse, authentication)
         SecurityContextHolder.clearContext()
+    }
+
+    @PostMapping("/withdraw")
+    fun withdraw(
+        authentication: Authentication,
+        httpRequest: HttpServletRequest,
+        httpResponse: HttpServletResponse
+    ): WithdrawResponse {
+        val principal = authentication.principal as CustomUserPrincipal
+        val response = authService.withdraw(principal.userId)
+        SecurityContextLogoutHandler().logout(httpRequest, httpResponse, authentication)
+        SecurityContextHolder.clearContext()
+        return response
     }
 }
