@@ -34,7 +34,15 @@ class WithdrawnUserValidationFilter(
 
         if (principal is CustomUserPrincipal) {
             val user = userRepository.findById(principal.userId).orElse(null)
-            if (user?.withdrawnAt != null) {
+            if (user == null) {
+                SecurityContextLogoutHandler().logout(request, response, authentication)
+                response.status = HttpServletResponse.SC_UNAUTHORIZED
+                response.contentType = "application/json;charset=UTF-8"
+                response.writer.write("""{"message":"인증 정보가 유효하지 않습니다."}""")
+                return
+            }
+
+            if (user.withdrawnAt != null) {
                 SecurityContextLogoutHandler().logout(request, response, authentication)
                 response.status = HttpServletResponse.SC_FORBIDDEN
                 response.contentType = "application/json;charset=UTF-8"
