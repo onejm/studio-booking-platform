@@ -4,13 +4,14 @@ import com.min.studioreservation.auth.dto.LoginRequest
 import com.min.studioreservation.auth.dto.LoginResponse
 import com.min.studioreservation.auth.dto.SignUpRequest
 import com.min.studioreservation.auth.dto.SignUpResponse
+import com.min.studioreservation.auth.dto.WithdrawResponse
+import com.min.studioreservation.auth.security.CustomUserPrincipal
 import com.min.studioreservation.auth.service.AuthService
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.Authentication
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -23,6 +24,8 @@ import org.springframework.web.bind.annotation.RestController
 class AuthController(
     private val authService: AuthService
 ) {
+    private val logoutHandler = SecurityContextLogoutHandler()
+
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.CREATED)
     fun signUp(@Valid @RequestBody request: SignUpRequest): SignUpResponse {
@@ -35,7 +38,8 @@ class AuthController(
         httpRequest: HttpServletRequest
     ): LoginResponse {
         val response = authService.login(request)
-        httpRequest.session
+        val session = httpRequest.getSession(true)
+        authService.registerSession(response.userId, session.id)
         return response
     }
 
@@ -46,7 +50,18 @@ class AuthController(
         httpRequest: HttpServletRequest,
         httpResponse: HttpServletResponse
     ) {
-        SecurityContextLogoutHandler().logout(httpRequest, httpResponse, authentication)
-        SecurityContextHolder.clearContext()
+        logoutHandler.logout(httpRequest, httpResponse, authentication)
+    }
+
+    @PostMapping("/withdraw")
+    fun withdraw(
+        authentication: Authentication,
+        httpRequest: HttpServletRequest,
+        httpResponse: HttpServletResponse
+    ): WithdrawResponse {
+        val principal = authentication.principal as CustomUserPrincipal
+        val response = authService.withdraw(principal.userId)
+        logoutHandler.logout(httpRequest, httpResponse, authentication)
+        return response
     }
 }

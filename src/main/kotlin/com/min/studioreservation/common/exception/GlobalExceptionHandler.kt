@@ -1,6 +1,9 @@
 package com.min.studioreservation.common.exception
 
+import com.min.studioreservation.auth.exception.AlreadyWithdrawnException
 import com.min.studioreservation.auth.exception.DuplicateEmailException
+import com.min.studioreservation.auth.exception.UserNotFoundException
+import com.min.studioreservation.auth.exception.WithdrawnUserException
 import org.springframework.http.HttpStatus
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.web.bind.MethodArgumentNotValidException
@@ -27,5 +30,23 @@ class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     fun handleBadCredentials(ex: BadCredentialsException): ErrorResponse {
         return ErrorResponse(message = ex.message ?: "이메일 또는 비밀번호가 올바르지 않습니다.")
+    }
+
+    @ExceptionHandler(WithdrawnUserException::class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    fun handleWithdrawnUser(ex: WithdrawnUserException): ErrorResponse {
+        return ErrorResponse(message = ex.message ?: "탈퇴한 회원입니다.")
+    }
+
+    @ExceptionHandler(AlreadyWithdrawnException::class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    fun handleAlreadyWithdrawn(ex: AlreadyWithdrawnException): ErrorResponse {
+        return ErrorResponse(message = ex.message ?: "이미 탈퇴한 회원입니다.")
+    }
+
+    @ExceptionHandler(UserNotFoundException::class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    fun handleUserNotFound(ex: UserNotFoundException): ErrorResponse {
+        return ErrorResponse(message = ex.message ?: "사용자를 찾을 수 없습니다.")
     }
 }
