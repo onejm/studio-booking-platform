@@ -86,20 +86,23 @@ class AuthService(
 
     @Transactional
     fun withdraw(userId: Long): WithdrawResponse {
-        val user = userRepository.findById(userId)
-            .orElseThrow { UserNotFoundException("사용자를 찾을 수 없습니다.") }
-
-        if (user.withdrawnAt != null) {
+        val withdrawnAt = LocalDateTime.now()
+        val updatedRows = userRepository.markWithdrawnIfActive(userId, withdrawnAt)
+        if (updatedRows == 0) {
+            if (!userRepository.existsById(userId)) {
+                throw UserNotFoundException("사용자를 찾을 수 없습니다.")
+            }
             throw AlreadyWithdrawnException("이미 탈퇴한 회원입니다.")
         }
 
-        user.withdrawnAt = LocalDateTime.now()
+        val user = userRepository.findById(userId)
+            .orElseThrow { UserNotFoundException("사용자를 찾을 수 없습니다.") }
         sessionRegistry.getAllSessions(userId, false).forEach { it.expireNow() }
 
         return WithdrawResponse(
             userId = user.id ?: error("회원 ID가 존재하지 않습니다."),
             email = user.email,
-            withdrawnAt = user.withdrawnAt ?: error("탈퇴일 저장에 실패했습니다.")
+            withdrawnAt = user.withdrawnAt ?: withdrawnAt
         )
     }
 }
