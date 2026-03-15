@@ -17,6 +17,8 @@ class WithdrawnUserValidationFilter(
     private val userRepository: UserRepository,
     private val objectMapper: ObjectMapper
 ) : OncePerRequestFilter() {
+    private val logoutHandler = SecurityContextLogoutHandler()
+
     private val excludedPaths = setOf(
         "/api/auth/signup",
         "/api/auth/login",
@@ -39,13 +41,13 @@ class WithdrawnUserValidationFilter(
         if (principal is CustomUserPrincipal) {
             val user = userRepository.findById(principal.userId).orElse(null)
             if (user == null) {
-                SecurityContextLogoutHandler().logout(request, response, authentication)
+                logoutHandler.logout(request, response, authentication)
                 writeError(response, HttpServletResponse.SC_UNAUTHORIZED, "인증 정보가 유효하지 않습니다.")
                 return
             }
 
             if (user.withdrawnAt != null) {
-                SecurityContextLogoutHandler().logout(request, response, authentication)
+                logoutHandler.logout(request, response, authentication)
                 writeError(response, HttpServletResponse.SC_FORBIDDEN, "탈퇴한 회원입니다.")
                 return
             }
