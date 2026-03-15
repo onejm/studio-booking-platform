@@ -37,7 +37,8 @@ class AuthController(
         httpRequest: HttpServletRequest
     ): LoginResponse {
         val response = authService.login(request)
-        httpRequest.session
+        val session = httpRequest.getSession(true)
+        authService.registerSession(response.userId, session.id)
         return response
     }
 

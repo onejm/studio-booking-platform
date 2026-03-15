@@ -18,6 +18,7 @@ import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.core.session.SessionRegistry
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -26,7 +27,8 @@ import java.time.LocalDateTime
 class AuthService(
     private val userRepository: UserRepository,
     private val passwordEncoder: PasswordEncoder,
-    private val authenticationManager: AuthenticationManager
+    private val authenticationManager: AuthenticationManager,
+    private val sessionRegistry: SessionRegistry
 ) {
     @Transactional
     fun signUp(request: SignUpRequest): SignUpResponse {
@@ -77,6 +79,11 @@ class AuthService(
         )
     }
 
+    fun registerSession(userId: Long, sessionId: String) {
+        sessionRegistry.removeSessionInformation(sessionId)
+        sessionRegistry.registerNewSession(sessionId, userId)
+    }
+
     @Transactional
     fun withdraw(userId: Long): WithdrawResponse {
         val user = userRepository.findById(userId)
@@ -87,6 +94,7 @@ class AuthService(
         }
 
         user.withdrawnAt = LocalDateTime.now()
+        sessionRegistry.getAllSessions(userId, false).forEach { it.expireNow() }
 
         return WithdrawResponse(
             userId = user.id ?: error("회원 ID가 존재하지 않습니다."),
