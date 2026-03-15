@@ -54,12 +54,6 @@ class AuthService(
     }
 
     fun login(request: LoginRequest): LoginResponse {
-        val user = userRepository.findByEmail(request.email)
-            ?: throw BadCredentialsException("이메일 또는 비밀번호가 올바르지 않습니다.")
-        if (user.withdrawnAt != null) {
-            throw WithdrawnUserException("탈퇴한 회원입니다.")
-        }
-
         val authentication = try {
             authenticationManager.authenticate(
                 UsernamePasswordAuthenticationToken(request.email, request.password)
@@ -71,6 +65,12 @@ class AuthService(
         SecurityContextHolder.getContext().authentication = authentication
 
         val principal = authentication.principal as CustomUserPrincipal
+        val user = userRepository.findById(principal.userId)
+            .orElseThrow { BadCredentialsException("이메일 또는 비밀번호가 올바르지 않습니다.") }
+        if (user.withdrawnAt != null) {
+            throw WithdrawnUserException("탈퇴한 회원입니다.")
+        }
+
         return LoginResponse(
             userId = principal.userId,
             name = principal.name,
