@@ -36,7 +36,6 @@ class WithdrawnUserValidationFilter(
             val user = userRepository.findById(principal.userId).orElse(null)
             if (user?.withdrawnAt != null) {
                 SecurityContextLogoutHandler().logout(request, response, authentication)
-                SecurityContextHolder.clearContext()
                 response.status = HttpServletResponse.SC_FORBIDDEN
                 response.contentType = "application/json;charset=UTF-8"
                 response.writer.write("""{"message":"탈퇴한 회원입니다."}""")
