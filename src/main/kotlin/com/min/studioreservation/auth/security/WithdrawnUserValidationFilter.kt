@@ -13,10 +13,15 @@ import org.springframework.web.filter.OncePerRequestFilter
 class WithdrawnUserValidationFilter(
     private val userRepository: UserRepository
 ) : OncePerRequestFilter() {
+    private val excludedPaths = setOf(
+        "/api/auth/signup",
+        "/api/auth/login",
+        "/api/auth/logout"
+    )
 
     override fun shouldNotFilter(request: HttpServletRequest): Boolean {
-        val path = request.requestURI
-        return path == "/api/auth/signup" || path == "/api/auth/login" || path == "/api/auth/logout"
+        val normalizedPath = request.servletPath.removeSuffix("/").ifEmpty { "/" }
+        return normalizedPath in excludedPaths
     }
 
     override fun doFilterInternal(
