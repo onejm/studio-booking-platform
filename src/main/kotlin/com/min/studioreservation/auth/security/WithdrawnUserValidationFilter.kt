@@ -1,7 +1,8 @@
 package com.min.studioreservation.auth.security
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.min.studioreservation.common.exception.ErrorResponse
+import com.min.studioreservation.common.dto.ApiResponse
+import com.min.studioreservation.common.exception.ErrorType
 import com.min.studioreservation.user.repository.UserRepository
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
@@ -42,13 +43,13 @@ class WithdrawnUserValidationFilter(
             val user = userRepository.findById(principal.userId).orElse(null)
             if (user == null) {
                 logoutHandler.logout(request, response, authentication)
-                writeError(response, HttpServletResponse.SC_UNAUTHORIZED, "인증 정보가 유효하지 않습니다.")
+                writeError(response, ErrorType.UNAUTHORIZED)
                 return
             }
 
             if (user.withdrawnAt != null) {
                 logoutHandler.logout(request, response, authentication)
-                writeError(response, HttpServletResponse.SC_FORBIDDEN, "탈퇴한 회원입니다.")
+                writeError(response, ErrorType.ACCOUNT_WITHDRAWN)
                 return
             }
         }
@@ -56,10 +57,10 @@ class WithdrawnUserValidationFilter(
         filterChain.doFilter(request, response)
     }
 
-    private fun writeError(response: HttpServletResponse, status: Int, message: String) {
-        response.status = status
+    private fun writeError(response: HttpServletResponse, errorType: ErrorType) {
+        response.status = errorType.status.value()
         response.contentType = MediaType.APPLICATION_JSON_VALUE
         response.characterEncoding = Charsets.UTF_8.name()
-        response.writer.write(objectMapper.writeValueAsString(ErrorResponse(message = message)))
+        response.writer.write(objectMapper.writeValueAsString(ApiResponse.error<Any>(errorType)))
     }
 }
